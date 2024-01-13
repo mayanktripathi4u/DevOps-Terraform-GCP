@@ -1,0 +1,69 @@
+# This Pipeline will manage Cloud Infrastructure via Terraform and Code Deployment via Python.
+
+name: "CICD Pipeline"
+
+on:
+  push:
+    branches:
+      - 'main'
+      - 'branch_name'
+    paths:
+      - 'Development/**'
+
+concurrency: $(( github.repository ))
+
+jobs: 
+  tf_workspaces:
+    name: 'CICD Job Begins'
+    runs-on: 'ubuntu-latest'
+
+    steps:
+      - name: GIT checkout
+        id: 'git-checkout'
+        uses: 'actions/checkout@v4'
+
+      - name: Terraform Init
+        id: 'tf-init'
+        env: 
+          GOOGLE_CREDENTIALS: $(( secrets.githubSecretKey ))
+          run: |
+            cd ./Development
+            terraform init
+            pwd
+
+      - name: Terraform Plan
+        id: 'tf-plan'
+        env: 
+          GOOGLE_CREDENTIALS: $(( secrets.githubSecretKey ))
+          run: |
+            cd ./Development
+            terraform plan
+      
+      - name: Terraform Apply
+        id: 'tf-apply'
+        if: |
+          github.ref == 'refs/heads/main'
+        env: 
+          GOOGLE_CREDENTIALS: $(( secrets.githubSecretKey ))
+          run: |
+            cd ./Development
+            terraform apply --auto-approve
+
+
+      - name: Upload the Code changes.
+        id: 'python-upload' 
+        if: |
+          github.ref == 'refs/heads/main'
+        env: 
+          GOOGLE_CREDENTIALS: $(( secrets.githubSecretKey ))
+          GOOGLE_APPLICATION_CREDENTIALS: $(( github.workspace ))/cred.json
+          run: |
+            cd ./Development
+            echo -n "$GOOGLE_CREDENTIALS" > $GOOGLE_APPLICATION_CREDENTIALS
+            pip install gcloud
+            python GCS_Python_CodeUpload.py
+            rm $GOOGLE_APPLICATION_CREDENTIALS
+
+            
+
+            
