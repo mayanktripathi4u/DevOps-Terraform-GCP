@@ -40,3 +40,6 @@ In this we are trying to create a simple CI/CD Pipeline which will
 
 5. Next if used branch then go with the `Pull Request (PR)` and merge the changes. Once merged GitHub Actions will get trigger again, and now as this is in `main`, "terraform apply" and "python upload" will also run.
 
+
+
+
